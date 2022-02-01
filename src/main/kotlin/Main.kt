@@ -3,7 +3,9 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,11 +36,28 @@ fun App(name: MutableState<String>) {
             if (name.value.isBlank()) {
                 Text("Drop a file . . .")
             } else {
-                Image(
-                    bitmap = asImageAsset(Canny().apply(imread(name.value))),
-                    contentDescription = "Icon",
-                    modifier = Modifier.fillMaxSize()
-                )
+                val value = remember { mutableStateOf(200.0F) }
+                val value2 = remember { mutableStateOf(100.0F) }
+                val filter = Canny()
+                filter.threshold1 = value.value.toInt()
+                filter.threshold2 = value2.value.toInt()
+
+                Column {
+                    Text(value.value.toString())
+                    Slider(steps = 10, valueRange = 1f..300f, value = value.value, onValueChange = {
+                        value.value = it
+                    })
+                    Text(value2.value.toString())
+                    Slider(steps = 10, valueRange = 1f..300f, value = value2.value, onValueChange = {
+                        value2.value = it
+                    })
+
+                    Image(
+                        bitmap = asImageAsset(filter.apply(imread(name.value))),
+                        contentDescription = "Icon",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
