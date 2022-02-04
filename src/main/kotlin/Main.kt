@@ -80,7 +80,7 @@ private fun ContentPanel(
 
         if (name.value.isBlank()) {
             // hack to save loading an image manually every time
-            name.value = "/Users/craig/dev/source/untitled/src/main/resources/sample-face.jpg"
+            //name.value = "/Users/craig/dev/source/untitled/src/main/resources/sample-face.jpg"
         }
 
         if (name.value.isBlank()) {
