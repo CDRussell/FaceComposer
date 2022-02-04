@@ -44,15 +44,16 @@ fun App(
     showMenu: MutableState<Boolean>,
     filter: MutableState<Filter>,
     filterModifiers: MutableState<ImageFilters>,
+    showImageFilterAdjusters: MutableState<Boolean>,
 ) {
 
     MaterialTheme {
 
         Row() {
             AnimatedVisibility(visible = showMenu.value) {
-                MenuPanel(filePickerState, filter)
+                MenuPanel(filePickerState, filter, showImageFilterAdjusters)
             }
-            ContentPanel(imageName, filePickerState, filter, filterModifiers)
+            ContentPanel(imageName, filePickerState, filter, filterModifiers, showImageFilterAdjusters)
         }
 
     }
@@ -64,6 +65,7 @@ private fun ContentPanel(
     filePickerState: MutableState<FilePickerDialogState>,
     filter: MutableState<Filter>,
     filterModifiers: MutableState<ImageFilters>,
+    showImageFilterAdjusters: MutableState<Boolean>,
 ) {
     Box(
         modifier = Modifier.fillMaxHeight()
@@ -86,7 +88,7 @@ private fun ContentPanel(
         } else {
 
             Column {
-                FilterControls(filter.value, filterModifiers)
+                FilterControls(filter.value, filterModifiers, showImageFilterAdjusters)
                 applyFilter(filter.value, filterModifiers)
 
                 Image(
@@ -110,12 +112,16 @@ fun applyFilter(filter: Filter, filterModifiers: MutableState<ImageFilters>) {
 @Composable
 private fun FilterControls(
     filter: Filter,
-    filterModifiers: MutableState<ImageFilters>
+    filterModifiers: MutableState<ImageFilters>,
+    showImageFilterAdjusters: MutableState<Boolean>
 ) {
-    when (filter) {
-        is Canny -> CannyFilters(filterModifiers)
-        is Contours -> ContoursFilters(filterModifiers)
-        is Fisheye -> FisheyeFilters(filterModifiers)
+
+    AnimatedVisibility(showImageFilterAdjusters.value) {
+        when (filter) {
+            is Canny -> CannyFilters(filterModifiers)
+            is Contours -> ContoursFilters(filterModifiers)
+            is Fisheye -> FisheyeFilters(filterModifiers)
+        }
     }
 }
 
@@ -125,8 +131,6 @@ fun CannyFilters(filterModifiers: MutableState<ImageFilters>) {
         Text(filterModifiers.value.cannyFilter.threshold.toString())
         Slider(steps = 0, valueRange = 1f..300f, value = filterModifiers.value.cannyFilter.threshold, onValueChange = { value->
             filterModifiers.update { it.cannyFilter.threshold = value }
-            //cannyThreshold.value = value
-            println("canny threshold set to $value")
         })
     }
 }
@@ -186,7 +190,7 @@ private fun showLoadImageDialog(
 }
 
 @Composable
-private fun MenuPanel(filePickerState: MutableState<FilePickerDialogState>, filter: MutableState<Filter>) {
+private fun MenuPanel(filePickerState: MutableState<FilePickerDialogState>, filter: MutableState<Filter>, showImageFilterAdjusters: MutableState<Boolean>) {
     Box(
         modifier = Modifier
             .fillMaxHeight()
@@ -209,7 +213,7 @@ private fun MenuPanel(filePickerState: MutableState<FilePickerDialogState>, filt
                     .fillMaxWidth()
                     .background(Color(22, 45, 200, 100)), contentAlignment = Alignment.Center
             ) {
-                FilterMenu(filter)
+                FilterMenu(filter, showImageFilterAdjusters)
             }
         }
     }
@@ -236,15 +240,15 @@ private fun MainMenu(filePickerState: MutableState<FilePickerDialogState>) {
 }
 
 @Composable
-private fun FilterMenu(filter: MutableState<Filter>) {
+private fun FilterMenu(filter: MutableState<Filter>, showImageFilterAdjusters: MutableState<Boolean>) {
     Column {
         Text("Apply filters")
 
-        Button(onClick = { filter.value = Canny() }) { Text("Canny") }
-        Button(onClick = { filter.value = Cartoon2() }) { Text("Cartoon") }
-        Button(onClick = { filter.value = Contours() }) { Text("Contours") }
-        Button(onClick = { filter.value = Fisheye() }) { Text("Fisheye") }
-        Button(onClick = { filter.value = NoOP() }) { Text("Clear filter") }
+        Button(onClick = { filter.value = Canny(); showImageFilterAdjusters.value = true }) { Text("Canny") }
+        Button(onClick = { filter.value = Cartoon2(); showImageFilterAdjusters.value = false }) { Text("Cartoon") }
+        Button(onClick = { filter.value = Contours(); showImageFilterAdjusters.value = true }) { Text("Contours") }
+        Button(onClick = { filter.value = Fisheye(); showImageFilterAdjusters.value = true }) { Text("Fisheye") }
+        Button(onClick = { filter.value = NoOP(); showImageFilterAdjusters.value = false }) { Text("Clear filter") }
     }
 }
 
@@ -252,10 +256,9 @@ fun main() = application {
     val imagePath = remember { mutableStateOf("") }
     val filePickerState = remember { mutableStateOf(FilePickerDialogState(), policy = neverEqualPolicy()) }
     val showMenu = remember { mutableStateOf(false) }
-    val filter: MutableState<Filter> = remember { mutableStateOf(NoOP()) }
-    val filterModifiers = remember {  mutableStateOf(ImageFilters(), policy = neverEqualPolicy()) }
-    //val cannyThreshold = remember { mutableStateOf(200.0F) }
-    //val contoursThickness = remember { mutableStateOf(0.05F) }
+    val filter: MutableState<Filter> = remember { mutableStateOf(NoOP(), policy = neverEqualPolicy()) }
+    val filterModifiers = remember { mutableStateOf(ImageFilters(), policy = neverEqualPolicy()) }
+    val showImageFilterAdjusters = remember { mutableStateOf(false) }
 
     showMenu.value = imagePath.value.isNotEmpty()
 
@@ -279,7 +282,7 @@ fun main() = application {
             }
         }
 
-        App(imagePath, filePickerState, showMenu, filter, filterModifiers)
+        App(imagePath, filePickerState, showMenu, filter, filterModifiers, showImageFilterAdjusters)
     }
 }
 
